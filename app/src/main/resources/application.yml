@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: app
+  mongodb:
+    uri: mongodb+srv://abc:sanjay123@cluster0.taeogpe.mongodb.net/student?retryWrites=true&w=majority&appName=Cluster0
+
+jwt:
+  secret: 9a4f2c8d3e7b1a5f6c8b9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a
