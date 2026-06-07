@@ -23,11 +23,15 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                // ADDED: Public permission for the keep-alive ping endpoint
+                .requestMatchers("/api/ping").permitAll()
+                
                 .requestMatchers("/api/auth", "/api/auth/**").permitAll()
                 .requestMatchers("/api/section-data", "/api/section-data/**").permitAll()
                 .requestMatchers("/api/students", "/api/students/**").permitAll()
                 .requestMatchers("/api/faculty", "/api/faculty/**").permitAll()
                 .requestMatchers("/api/attendance", "/api/attendance/**").permitAll()
+                
                 // THIS FIXES THE 403 MASKING ISSUE
                 .requestMatchers("/error").permitAll() 
                 .anyRequest().authenticated()
