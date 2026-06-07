@@ -17,6 +17,7 @@ public class Faculty {
     private String id;
     private String employeeId;
     private String name;
+    private String department; // NEW: Added department field
     private String designation;
     private String experience;
     private String mobileNumber;

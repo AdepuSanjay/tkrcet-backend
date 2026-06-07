@@ -32,7 +32,7 @@ public class Year {
     public static class Section {
         private String name;
         private List<SectionTimetable> timetable;
-        private List<Student> students;
+        // REMOVED: private List<Student> students; -> They are now standalone!
     }
 
     @Data
@@ -52,19 +52,5 @@ public class Year {
         private String facultyId; 
         private String facultyName;
         private String phoneNumber;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Student {
-        private String rollNumber;
-        private String name;
-        private String fatherName;
-        private String password;
-        private String role = "student";
-        private String image; // Stores Cloudinary URL directly
-        private String mobileNumber;
-        private String fatherMobileNumber;
     }
 }
