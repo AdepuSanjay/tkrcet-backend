@@ -23,15 +23,23 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // ADDED: Public permission for the keep-alive ping endpoint
+                // Public permission for the keep-alive ping endpoint
                 .requestMatchers("/api/ping").permitAll()
-                
+
+                // Auth & Base Routes
                 .requestMatchers("/api/auth", "/api/auth/**").permitAll()
                 .requestMatchers("/api/section-data", "/api/section-data/**").permitAll()
                 .requestMatchers("/api/students", "/api/students/**").permitAll()
                 .requestMatchers("/api/faculty", "/api/faculty/**").permitAll()
-                .requestMatchers("/api/attendance", "/api/attendance/**").permitAll()
                 
+                // Attendance Routes (Explicitly defined for clarity & safety)
+                .requestMatchers("/api/attendance").permitAll()
+                .requestMatchers("/api/attendance/search").permitAll()
+                .requestMatchers("/api/attendance/students-list").permitAll()
+                .requestMatchers("/api/attendance/summary").permitAll()
+                .requestMatchers("/api/attendance/student/**").permitAll()
+                .requestMatchers("/api/attendance/**").permitAll() // Catch-all fallback
+
                 // THIS FIXES THE 403 MASKING ISSUE
                 .requestMatchers("/error").permitAll() 
                 .anyRequest().authenticated()
