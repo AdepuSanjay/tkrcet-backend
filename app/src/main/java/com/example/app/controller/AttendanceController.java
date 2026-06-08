@@ -250,3 +250,38 @@ public class AttendanceController {
         return ResponseEntity.ok(response);
     }
 }
+
+
+    /**
+     * PUT: Update an existing attendance sheet (allowed within a 2-day window)
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAttendance(@PathVariable String id, @RequestBody Attendance updatedAttendance) {
+        Optional<Attendance> existingRecordOpt = attendanceRepository.findById(id);
+
+        if (existingRecordOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse(false, "Attendance record not found."));
+        }
+
+        Attendance existingRecord = existingRecordOpt.get();
+
+        // Enforce the 2-day window rule on the backend for security
+        java.time.LocalDate recordDate = java.time.LocalDate.parse(existingRecord.getDate());
+        java.time.LocalDate today = java.time.LocalDate.now();
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(recordDate, today);
+
+        if (daysBetween > 1 || daysBetween < 0) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse(false, "Cannot edit records older than 2 days."));
+        }
+
+        // Update the allowed fields
+        existingRecord.setTopic(updatedAttendance.getTopic());
+        existingRecord.setRemarks(updatedAttendance.getRemarks());
+        existingRecord.setAttendance(updatedAttendance.getAttendance());
+
+        attendanceRepository.save(existingRecord);
+
+        return ResponseEntity.ok(new ApiResponse(true, "Attendance record updated successfully."));
+    }
