@@ -9,8 +9,10 @@ import java.util.List;
 @Repository
 public interface AttendanceRepository extends MongoRepository<Attendance, String> {
     
-    // Custom finder to check or fetch existing logs for a specific class slot
     List<Attendance> findByDateAndYearAndDepartmentAndSectionAndPeriod(
             String date, String year, String department, String section, Integer period
     );
+
+    // ADDED: Fetch all history sheets for an entire class room configuration
+    List<Attendance> findByYearAndDepartmentAndSection(String year, String department, String section);
 }
