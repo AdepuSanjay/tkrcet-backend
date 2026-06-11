@@ -8,11 +8,13 @@ import java.util.List;
 
 @Repository
 public interface AttendanceRepository extends MongoRepository<Attendance, String> {
-    
+
     List<Attendance> findByDateAndYearAndDepartmentAndSectionAndPeriod(
             String date, String year, String department, String section, Integer period
     );
 
-    // ADDED: Fetch all history sheets for an entire class room configuration
     List<Attendance> findByYearAndDepartmentAndSection(String year, String department, String section);
+
+    // ADD THIS NEW LINE FOR THE ACTIVITY DIARY:
+    List<Attendance> findByYearAndDepartmentAndSectionAndSubject(String year, String department, String section, String subject);
 }
