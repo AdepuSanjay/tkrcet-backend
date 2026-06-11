@@ -31,7 +31,6 @@ public class AttendanceController {
      */
     @PostMapping
     public ResponseEntity<?> submitAttendance(@RequestBody Attendance attendance) {
-        // Validation: Prevent duplicate submissions for the same period on the same day
         List<Attendance> existingRecords = attendanceRepository.findByDateAndYearAndDepartmentAndSectionAndPeriod(
                 attendance.getDate(),
                 attendance.getYear(),
@@ -78,34 +77,30 @@ public class AttendanceController {
                     .body(new ApiResponse(false, "No logs found for the specified class configuration."));
         }
 
-        // Returns the actual matching attendance document (not wrapped in ApiResponse)
-        // so your frontend can easily map through the 'attendance' array to render the UI.
         return ResponseEntity.ok(records.get(0)); 
     }
 
     /**
-     * NEW: Fetch students list belonging to a specific class config for marking sheets
-     * URL Example: /api/attendance/students-list?year=B.Tech I&department=CSE&section=A
+     * GET: Fetch students list belonging to a specific class config for marking sheets
      */
     @GetMapping("/students-list")
     public ResponseEntity<?> getStudentsForMarking(
             @RequestParam String year,
             @RequestParam String department,
             @RequestParam String section) {
-        
+
         List<Student> students = studentRepository.findByYearAndDepartmentAndSection(year, department, section);
-        
+
         if (students.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse(false, "No students registered inside this section combination."));
         }
-        
+
         return ResponseEntity.ok(students);
     }
 
     /**
-     * NEW: Fetch overall cumulative percentage report for all students in a specific section
-     * URL Example: /api/attendance/summary?year=B.Tech I&department=CSE&section=A
+     * GET: Fetch overall cumulative percentage report for all students in a specific section
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getSectionAttendanceSummary(
@@ -113,14 +108,10 @@ public class AttendanceController {
             @RequestParam String department,
             @RequestParam String section) {
 
-        // 1. Fetch total matching recorded sheets for this class combination
         List<Attendance> sheets = attendanceRepository.findByYearAndDepartmentAndSection(year, department, section);
         int totalClassesHeld = sheets.size();
-
-        // 2. Fetch all registered students to map metrics neatly even if they have 0 logs
         List<Student> studentList = studentRepository.findByYearAndDepartmentAndSection(year, department, section);
 
-        // 3. Map compilation structure
         Map<String, Map<String, Object>> analysisMap = new HashMap<>();
         for (Student s : studentList) {
             Map<String, Object> stats = new HashMap<>();
@@ -132,7 +123,6 @@ public class AttendanceController {
             analysisMap.put(s.getRollNumber(), stats);
         }
 
-        // 4. Compute presents and absents from the matrix sheets on MongoDB
         for (Attendance sheet : sheets) {
             if (sheet.getAttendance() != null) {
                 for (Attendance.StudentStatus status : sheet.getAttendance()) {
@@ -150,12 +140,11 @@ public class AttendanceController {
             }
         }
 
-        // 5. Finalize mathematical evaluation safely
         List<Map<String, Object>> finalResultList = new ArrayList<>();
         for (Map.Entry<String, Map<String, Object>> entry : analysisMap.entrySet()) {
             Map<String, Object> studentStats = entry.getValue();
             int presents = (int) studentStats.get("presentCount");
-            
+
             if (totalClassesHeld > 0) {
                 double computedPct = ((double) presents / totalClassesHeld) * 100;
                 studentStats.put("percentage", String.format("%.1f%%", computedPct));
@@ -171,22 +160,19 @@ public class AttendanceController {
     }
 
     /**
-     * NEW: Fetch detailed attendance history and percentage for a SINGLE student
-     * URL Example: GET /api/attendance/student/100
+     * GET: Fetch detailed attendance history and percentage for a SINGLE student
      */
     @GetMapping("/student/{rollNumber}")
     public ResponseEntity<?> getSingleStudentAttendance(@PathVariable String rollNumber) {
-        
-        // 1. Verify the student exists and get their class details
+
         Optional<Student> studentOpt = studentRepository.findByRollNumber(rollNumber);
         if (studentOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new ApiResponse(false, "Student details not found."));
         }
-        
+
         Student student = studentOpt.get();
 
-        // 2. Fetch all attendance sheets for this student's specific class
         List<Attendance> classSheets = attendanceRepository.findByYearAndDepartmentAndSection(
                 student.getYear(), student.getDepartment(), student.getSection()
         );
@@ -194,50 +180,40 @@ public class AttendanceController {
         int totalClasses = 0;
         int presentCount = 0;
         int absentCount = 0;
-        
-        // This will hold the day-by-day breakdown for the frontend table
         List<Map<String, Object>> detailedHistory = new ArrayList<>();
 
-        // 3. Loop through the class sheets and extract only THIS student's status
         for (Attendance sheet : classSheets) {
             if (sheet.getAttendance() != null) {
                 for (Attendance.StudentStatus status : sheet.getAttendance()) {
-                    
-                    // Match the roll number (case-insensitive to be safe)
                     if (status.getRollNumber().trim().equalsIgnoreCase(rollNumber.trim())) {
                         totalClasses++;
-                        
-                        // Save the details of this specific class
+
                         Map<String, Object> recordDetail = new HashMap<>();
                         recordDetail.put("date", sheet.getDate());
                         recordDetail.put("period", sheet.getPeriod());
                         recordDetail.put("subject", sheet.getSubject());
                         recordDetail.put("facultyName", sheet.getFacultyName());
                         recordDetail.put("status", status.getStatus());
-                        
+
                         detailedHistory.add(recordDetail);
 
-                        // Increment counts
                         if ("present".equalsIgnoreCase(status.getStatus())) {
                             presentCount++;
                         } else {
                             absentCount++;
                         }
-                        
-                        break; // We found the student for this period, move to next sheet
+                        break; 
                     }
                 }
             }
         }
 
-        // 4. Calculate Percentage safely
         String percentage = "0.0%";
         if (totalClasses > 0) {
             double calc = ((double) presentCount / totalClasses) * 100;
             percentage = String.format("%.1f%%", calc);
         }
 
-        // 5. Package everything beautifully for the React frontend
         Map<String, Object> response = new HashMap<>();
         response.put("studentName", student.getName());
         response.put("rollNumber", student.getRollNumber());
@@ -249,8 +225,6 @@ public class AttendanceController {
 
         return ResponseEntity.ok(response);
     }
-}
-
 
     /**
      * PUT: Update an existing attendance sheet (allowed within a 2-day window)
@@ -287,8 +261,7 @@ public class AttendanceController {
     }
 
     /**
-     * NEW: Fetch all attendance history for a specific class and subject (Activity Diary)
-     * URL Example: /api/attendance/class-history?year=B.Tech I&department=CSE&section=A&subject=Data Structures
+     * GET: Fetch all attendance history for a specific class and subject (Activity Diary)
      */
     @GetMapping("/class-history")
     public ResponseEntity<?> getClassHistoryForDiary(
@@ -301,6 +274,7 @@ public class AttendanceController {
                 year, department, section, subject
         );
 
-        // We return it even if it's empty so the frontend table can just show "No records"
         return ResponseEntity.ok(records);
     }
+
+} // <--- Notice how the class correctly closes HERE now!
