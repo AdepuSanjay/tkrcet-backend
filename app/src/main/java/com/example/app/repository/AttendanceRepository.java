@@ -15,6 +15,8 @@ public interface AttendanceRepository extends MongoRepository<Attendance, String
 
     List<Attendance> findByYearAndDepartmentAndSection(String year, String department, String section);
 
-    // ADD THIS NEW LINE FOR THE ACTIVITY DIARY:
-    List<Attendance> findByYearAndDepartmentAndSectionAndSubject(String year, String department, String section, String subject);
+    // FIXED: Now strictly filters by the specific faculty member's name too!
+    List<Attendance> findByYearAndDepartmentAndSectionAndSubjectAndFacultyName(
+            String year, String department, String section, String subject, String facultyName
+    );
 }
