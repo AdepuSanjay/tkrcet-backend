@@ -285,3 +285,22 @@ public class AttendanceController {
 
         return ResponseEntity.ok(new ApiResponse(true, "Attendance record updated successfully."));
     }
+
+    /**
+     * NEW: Fetch all attendance history for a specific class and subject (Activity Diary)
+     * URL Example: /api/attendance/class-history?year=B.Tech I&department=CSE&section=A&subject=Data Structures
+     */
+    @GetMapping("/class-history")
+    public ResponseEntity<?> getClassHistoryForDiary(
+            @RequestParam String year,
+            @RequestParam String department,
+            @RequestParam String section,
+            @RequestParam String subject) {
+
+        List<Attendance> records = attendanceRepository.findByYearAndDepartmentAndSectionAndSubject(
+                year, department, section, subject
+        );
+
+        // We return it even if it's empty so the frontend table can just show "No records"
+        return ResponseEntity.ok(records);
+    }
