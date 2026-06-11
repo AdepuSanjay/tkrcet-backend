@@ -26,9 +26,6 @@ public class AttendanceController {
     @Autowired
     private StudentRepository studentRepository;
 
-    /**
-     * POST: Submit a new attendance sheet
-     */
     @PostMapping
     public ResponseEntity<?> submitAttendance(@RequestBody Attendance attendance) {
         List<Attendance> existingRecords = attendanceRepository.findByDateAndYearAndDepartmentAndSectionAndPeriod(
@@ -49,17 +46,11 @@ public class AttendanceController {
                     .body(new ApiResponse(true, "Attendance sheet submitted successfully."));
     }
 
-    /**
-     * GET: Fetch all attendance history
-     */
     @GetMapping
     public List<Attendance> getAllAttendanceRecords() {
         return attendanceRepository.findAll();
     }
 
-    /**
-     * GET: Filter attendance records dynamically for a specific class slot
-     */
     @GetMapping("/search")
     public ResponseEntity<?> getSpecificAttendance(
             @RequestParam String date,
@@ -80,9 +71,6 @@ public class AttendanceController {
         return ResponseEntity.ok(records.get(0)); 
     }
 
-    /**
-     * GET: Fetch students list belonging to a specific class config for marking sheets
-     */
     @GetMapping("/students-list")
     public ResponseEntity<?> getStudentsForMarking(
             @RequestParam String year,
@@ -99,9 +87,6 @@ public class AttendanceController {
         return ResponseEntity.ok(students);
     }
 
-    /**
-     * GET: Fetch overall cumulative percentage report for all students in a specific section
-     */
     @GetMapping("/summary")
     public ResponseEntity<?> getSectionAttendanceSummary(
             @RequestParam String year,
@@ -159,9 +144,6 @@ public class AttendanceController {
         return ResponseEntity.ok(finalResponse);
     }
 
-    /**
-     * GET: Fetch detailed attendance history and percentage for a SINGLE student
-     */
     @GetMapping("/student/{rollNumber}")
     public ResponseEntity<?> getSingleStudentAttendance(@PathVariable String rollNumber) {
 
@@ -226,9 +208,6 @@ public class AttendanceController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * PUT: Update an existing attendance sheet (allowed within a 2-day window)
-     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAttendance(@PathVariable String id, @RequestBody Attendance updatedAttendance) {
         Optional<Attendance> existingRecordOpt = attendanceRepository.findById(id);
@@ -240,7 +219,6 @@ public class AttendanceController {
 
         Attendance existingRecord = existingRecordOpt.get();
 
-        // Enforce the 2-day window rule on the backend for security
         java.time.LocalDate recordDate = java.time.LocalDate.parse(existingRecord.getDate());
         java.time.LocalDate today = java.time.LocalDate.now();
         long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(recordDate, today);
@@ -250,7 +228,6 @@ public class AttendanceController {
                     .body(new ApiResponse(false, "Cannot edit records older than 2 days."));
         }
 
-        // Update the allowed fields
         existingRecord.setTopic(updatedAttendance.getTopic());
         existingRecord.setRemarks(updatedAttendance.getRemarks());
         existingRecord.setAttendance(updatedAttendance.getAttendance());
@@ -261,20 +238,20 @@ public class AttendanceController {
     }
 
     /**
-     * GET: Fetch all attendance history for a specific class and subject (Activity Diary)
+     * GET: Fetch all attendance history for a specific class and subject BY SPECIFIC FACULTY
      */
     @GetMapping("/class-history")
     public ResponseEntity<?> getClassHistoryForDiary(
             @RequestParam String year,
             @RequestParam String department,
             @RequestParam String section,
-            @RequestParam String subject) {
+            @RequestParam String subject,
+            @RequestParam String facultyName) {
 
-        List<Attendance> records = attendanceRepository.findByYearAndDepartmentAndSectionAndSubject(
-                year, department, section, subject
+        List<Attendance> records = attendanceRepository.findByYearAndDepartmentAndSectionAndSubjectAndFacultyName(
+                year, department, section, subject, facultyName
         );
 
         return ResponseEntity.ok(records);
     }
-
-} // <--- Notice how the class correctly closes HERE now!
+}
